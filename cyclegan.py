@@ -2,14 +2,15 @@ import warnings
 with warnings.catch_warnings():
   warnings.filterwarnings("ignore",category=FutureWarning)
   import tensorflow as tf
-from model import CycleGAN, CycleGAN1
-from data_loader import get_data
+from model import CycleGAN
 import numpy as np
 import cv2
 import ops
 
-#print('Read data:')
-#train_A, train_B, test_A, test_B = get_data('apple2orange', 128)
+
+################################
+#       INPUT PIPELINE         #
+################################
 
 cap = cv2.VideoCapture('movie.mp4')
 frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -41,7 +42,6 @@ out.release()
 bnw = np.expand_dims(bnw,axis=3)
 bnw = np.expand_dims(bnw,axis=0)
 buf = np.expand_dims(buf,axis=0)
-print(np.shape(buf))
 
 '''
 #colour to black and white
@@ -62,8 +62,13 @@ D_real_a = D_a(tf.convert_to_tensor(fake_buf,dtype=tf.float32))
 D_real_b = D_b(tf.convert_to_tensor(cycle_buf,dtype=tf.float32))
 '''
 
+
+################################
+#           TRAINING           #
+################################
+
 print('Build graph:')
-model = CycleGAN1()
+model = CycleGAN()
 
 variables_to_save = tf.compat.v1.global_variables()
 init_op = tf.compat.v1.variables_initializer(variables_to_save)
