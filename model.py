@@ -6,8 +6,9 @@ from imageio import imsave
 import tensorflow as tf
 import numpy as np
 
-from generator import GeneratorA, GeneratorB
+from generator import Generator
 from discriminator import Discriminator
+import cv2
 
 class CycleGAN(object):
     def __init__(self):
@@ -34,10 +35,12 @@ class CycleGAN(object):
 
 
         # Generator
-        G_ab = self.G_ab = GeneratorA('G_ab', is_train=self.is_train,
-                         norm='instance', activation='relu', image_size=self._image_size)
-        G_ba = self.G_ba = GeneratorB('G_ba', is_train=self.is_train,
-                         norm='instance', activation='relu', image_size=self._image_size)
+        G_ab = self.G_ab = Generator('G_ab', is_train=self.is_train,
+                         norm='instance', activation='relu', 
+                         image_size=self._image_size, output_channels=1)
+        G_ba = self.G_ba = Generator('G_ba', is_train=self.is_train,
+                         norm='instance', activation='relu', 
+                         image_size=self._image_size, output_channels=3)
 
         # Discriminator
         D_a = self.D_a = Discriminator('D_a', is_train=self.is_train,
@@ -154,5 +157,18 @@ class CycleGAN(object):
                 'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
                     fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
 
-            if (step%10 == 0):
-                saver.save(sess, '/content/gdrive/My Drive/ckpt/3dcyclegan')
+#           if (step%60 == 0):
+#                saver.save(sess, '/content/gdrive/My Drive/ckpt/3dcyclegan')
+
+    def test(self, sess, vid):
+
+        fetches = [self.video_ba]
+        video_ba = sess.run(fetches, feed_dict={self.video_b: vid,
+                                            self.is_train:False})
+
+        video_ba = np.squeeze(video_ba)
+
+        out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc(*'MJPG'), 30, (256,256))
+        for i in range(len(video_ba)):
+            out.write(video_ba[i])
+        out.release()
