@@ -98,7 +98,7 @@ class CycleGAN(object):
         self.loss_cycle = loss_cycle
 
 
-    def train(self, sess, data_A, data_B):
+    def train(self, sess, saver, data_A, data_B):
         print('Start training.')
         print(len(data_A),'videos from A')
         print(len(data_B),'videos from B')
@@ -116,21 +116,6 @@ class CycleGAN(object):
         num_global_step = (num_initial_iter + num_decay_iter) * epoch_length
         t = trange(initial_step, num_global_step,
                    total=num_global_step, initial=initial_step)
-
-        ckpt = tf.train.Checkpoint(
-            gen_ab = self.G_ab,
-            gen_ba = self.G_ba,
-            dis_a = self.D_a,
-            dis_b = self.D_b,
-            optimizer_G_ab = self.optimizer_G_ab,
-            optimizer_G_ba = self.optimizer_G_ba,
-            optimizer_D_a = self.optimizer_D_a,
-            optimizer_D_b = self.optimizer_D_b,            
-            )
-        ckpt_manager = tf.train.CheckpointManager(ckpt, '/content/gdrive/My Drive/tf_ckpts', max_to_keep=3)
-
-        if ckpt_manager.latest_checkpoint:
-            ckpt.restore(ckpt_manager.latest_checkpoint)
 
         for step in t:
 
@@ -165,9 +150,9 @@ class CycleGAN(object):
                                                    self.fake_a: fake_a,
                                                    self.fake_b: fake_b})
 
-             t.set_description(
+            t.set_description(
                 'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
                     fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
 
-             if (step%10 == 0):
-                ckpt_manager.save()
+            if (step%10 == 0):
+                saver.save(sess, '/content/gdrive/My Drive/ckpt/3dcyclegan')

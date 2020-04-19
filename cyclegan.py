@@ -99,10 +99,11 @@ model = CycleGAN()
 variables_to_save = tf.compat.v1.global_variables()
 init_op = tf.compat.v1.variables_initializer(variables_to_save)
 init_all_op = tf.compat.v1.global_variables_initializer()
+saver = tf.compat.v1.train.Saver()
 
 with tf.compat.v1.Session() as sess:
     print("Initializing all parameters.")
     sess.run(init_all_op)
 
     print("Starting training session.")
-    model.train(sess, data_a, data_b)
+    model.train(sess, saver, data_a, data_b)
