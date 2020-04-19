@@ -34,15 +34,15 @@ class CycleGAN(object):
 
 
         # Generator
-        G_ab = GeneratorA('G_ab', is_train=self.is_train,
+        G_ab = self.G_ab = GeneratorA('G_ab', is_train=self.is_train,
                          norm='instance', activation='relu', image_size=self._image_size)
-        G_ba = GeneratorB('G_ba', is_train=self.is_train,
+        G_ba = self.G_ba = GeneratorB('G_ba', is_train=self.is_train,
                          norm='instance', activation='relu', image_size=self._image_size)
 
         # Discriminator
-        D_a = Discriminator('D_a', is_train=self.is_train,
+        D_a = self.D_a = Discriminator('D_a', is_train=self.is_train,
                             norm='instance', activation='leaky')
-        D_b = Discriminator('D_b', is_train=self.is_train,
+        D_b = self.D_b = Discriminator('D_b', is_train=self.is_train,
                             norm='instance', activation='leaky')
 
         # Generate videos (a->b->a and b->a->b)
@@ -107,8 +107,8 @@ class CycleGAN(object):
         num_batch = data_size // self._batch_size
         epoch_length = num_batch * self._batch_size
 
-        num_initial_iter = 2
-        num_decay_iter = 2
+        num_initial_iter = 5
+        num_decay_iter = 5
         lr = lr_initial = 0.0002
         lr_decay = lr_initial / num_decay_iter
 
@@ -117,8 +117,22 @@ class CycleGAN(object):
         t = trange(initial_step, num_global_step,
                    total=num_global_step, initial=initial_step)
 
+        ckpt = tf.train.Checkpoint(
+            gen_ab = self.G_ab,
+            gen_ba = self.G_ba,
+            dis_a = self.D_a,
+            dis_b = self.D_b,
+            optimizer_G_ab = self.optimizer_G_ab,
+            optimizer_G_ba = self.optimizer_G_ba,
+            optimizer_D_a = self.optimizer_D_a,
+            optimizer_D_b = self.optimizer_D_b,            
+            )
+        ckpt_manager = tf.train.CheckpointManager(ckpt, '/content/gdrive/My Drive/tf_ckpts', max_to_keep=3)
+
+        if ckpt_manager.latest_checkpoint:
+            ckpt.restore(ckpt_manager.latest_checkpoint)
+
         for step in t:
-            #TODO: resume training with global_step
 
             epoch = step // epoch_length
             iter = step % epoch_length
@@ -151,32 +165,9 @@ class CycleGAN(object):
                                                    self.fake_a: fake_a,
                                                    self.fake_b: fake_b})
 
-            if step % 1 == 0:
-                 t.set_description(
-                    'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
-                        fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
+             t.set_description(
+                'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
+                    fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
 
-'''
-    def test(self, sess, data_A, data_B, base_dir):
-        step = 0
-        for data in data_A:
-            step += 1
-            fetches = [self.image_ab, self.image_aba]
-            image_a = np.expand_dims(data, axis=0)
-            image_ab, image_aba = sess.run(fetches, feed_dict={self.image_a: image_a,
-                                                    self.is_train: False})
-            images = np.concatenate((image_a, image_ab, image_aba), axis=2)
-            images = np.squeeze(images, axis=0)
-            imsave(os.path.join(base_dir, 'a_to_b_{}.jpg'.format(step)), images)
-
-        step = 0
-        for data in data_B:
-            step += 1
-            fetches = [self.image_ba, self.image_bab]
-            image_b = np.expand_dims(data, axis=0)
-            image_ba, image_bab = sess.run(fetches, feed_dict={self.image_b: image_b,
-                                                    self.is_train: False})
-            images = np.concatenate((image_b, image_ba, image_bab), axis=2)
-            images = np.squeeze(images, axis=0)
-            imsave(os.path.join(base_dir, 'b_to_a_{}.jpg'.format(step)), images)
-'''
+             if (step%10 == 0):
+                ckpt_manager.save()
