@@ -18,8 +18,6 @@ class Discriminator(object):
                                self._reuse, self._norm, self._activation)
             D = ops.conv3_block(D, 256, 'C256', 4, 2, self._is_train,
                                self._reuse, self._norm, self._activation)
-            D = ops.conv3_block(D, 512, 'C512', 4, 2, self._is_train,
-                               self._reuse, self._norm, self._activation)
             D = ops.conv3_block(D, 1, 'C1', 4, 1, self._is_train,
                                self._reuse, norm=None, activation=None, bias=True)
             D = tf.reduce_mean(D, axis=[1,2,3])

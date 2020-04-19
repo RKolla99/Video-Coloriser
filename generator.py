@@ -10,7 +10,7 @@ class GeneratorA(object):
         self._is_train = is_train
         self._norm = norm
         self._activation = activation
-        self._num_res_block = 9
+        self._num_res_block = 6
         self._reuse = False
 
     def __call__(self, input):
