@@ -12,24 +12,30 @@ import ops
 #       INPUT PIPELINE         #
 ################################
 
-cap = cv2.VideoCapture('movie.mp4')
-frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-frameWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+	
+data_a = []
+data_b = []
+for i in range(3):
+	cap = cv2.VideoCapture('movie.mp4')
+	frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+	fc=0
+	ret=True
+	buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
+	bnw = np.empty((12, 256, 256), np.dtype('uint8'))
+	while (fc < frameCount  and ret):
+	    ret, frame = cap.read()
+	    buf[fc%12] = cv2.resize(frame,(256,256))
+	    bnw[fc%12] = cv2.cvtColor(buf[fc%12], cv2.COLOR_BGR2GRAY)
+	    if (fc%12==0):
+	    	data_a.append(buf)
+	    	data_b.append(bnw)
+	    	buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
+	    	bnw = np.empty((12, 256, 256), np.dtype('uint8'))
+	    fc += 1
+	cap.release()
 
-fc=0
-ret=True
-buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
-bnw = np.empty((12, 256, 256), np.dtype('uint8'))
+print(np.shape(data_a),np.shape(data_b))
 
-while (fc < frameCount  and ret):
-    ret, frame = cap.read()
-    buf[fc] = cv2.resize(frame,(256,256))
-    bnw[fc] = cv2.cvtColor(buf[fc], cv2.COLOR_BGR2GRAY)
-    fc += 1
-    if (fc==12):
-    	break
-cap.release()
 
 '''
 # Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
@@ -39,10 +45,30 @@ for i in range(len(buf)):
 	out.write(buf[i])
 out.release()
 '''
+
+'''
+cap = cv2.VideoCapture('movie.mp4')
+frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+fc=0
+ret=True
+buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
+bnw = np.empty((12, 256, 256), np.dtype('uint8'))
+while (fc < frameCount  and ret):
+    ret, frame = cap.read()
+    buf[fc%12] = cv2.resize(frame,(256,256))
+    bnw[fc%12] = cv2.cvtColor(buf[fc%12], cv2.COLOR_BGR2GRAY)
+    if (fc%12==0):
+    	break
+    fc += 1
+cap.release()
+
 bnw = np.expand_dims(bnw,axis=3)
 bnw = np.expand_dims(bnw,axis=0)
 buf = np.expand_dims(buf,axis=0)
 
+print(np.shape(buf),np.shape(bnw))
+exit(0)
+'''
 '''
 #colour to black and white
 G_ab = Generator1('G_ab', is_train=True, 
@@ -79,4 +105,4 @@ with tf.compat.v1.Session() as sess:
     sess.run(init_all_op)
 
     print("Starting training session.")
-    model.train(sess, buf, bnw)
+    model.train(sess, data_a, data_b)

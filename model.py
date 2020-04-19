@@ -101,18 +101,17 @@ class CycleGAN(object):
 
     def train(self, sess, data_A, data_B):
         print('Start training.')
-        print(len(data_A),'images from A')
-        print(len(data_B),'images from B')
+        print(len(data_A),'videos from A')
+        print(len(data_B),'videos from B')
 
         data_size = min(len(data_A), len(data_B))
         num_batch = data_size // self._batch_size
         epoch_length = num_batch * self._batch_size
 
-        num_initial_iter = 1
-        num_decay_iter = 1
+        num_initial_iter = 2
+        num_decay_iter = 2
         lr = lr_initial = 0.0002
         lr_decay = lr_initial / num_decay_iter
-
 
         initial_step = sess.run(self.global_step)
         num_global_step = (num_initial_iter + num_decay_iter) * epoch_length
@@ -127,16 +126,14 @@ class CycleGAN(object):
 
             if epoch > num_initial_iter:
                 lr = max(0.0, lr_initial - (epoch - num_initial_iter) * lr_decay)
-            '''
+
             if iter == 0:
                 random.shuffle(data_A)
                 random.shuffle(data_B)
 
-            image_a = np.stack(data_A[iter*self._batch_size:(iter+1)*self._batch_size])
-            image_b = np.stack(data_B[iter*self._batch_size:(iter+1)*self._batch_size])
-            '''
-            image_a = data_A
-            image_b = data_B
+            image_a = np.expand_dims(data_A[iter],axis=0)
+            image_b = np.expand_dims(data_B[iter],axis=0)
+            image_b = np.expand_dims(image_b,axis=4)
             
             fake_a, fake_b = sess.run([self.image_ba, self.image_ab],
                                       feed_dict={self.image_a: image_a,
@@ -155,7 +152,7 @@ class CycleGAN(object):
                                                    self.fake_a: fake_a,
                                                    self.fake_b: fake_b})
 
-            if step % 100 == 0:
+            if step % 1 == 0:
                  t.set_description(
                     'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
                         fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
