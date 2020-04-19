@@ -12,7 +12,7 @@ import ops
 #       INPUT PIPELINE         #
 ################################
 
-	
+
 data_a = []
 data_b = []
 for i in range(3):
@@ -67,27 +67,7 @@ bnw = np.expand_dims(bnw,axis=0)
 buf = np.expand_dims(buf,axis=0)
 
 print(np.shape(buf),np.shape(bnw))
-exit(0)
 '''
-'''
-#colour to black and white
-G_ab = Generator1('G_ab', is_train=True, 
-                 norm='instance', activation='relu', image_size=256)
-G_ba = Generator2('G_ba', is_train=True, 
-                 norm='instance', activation='relu', image_size=256)
-
-fake_buf = G_ab(tf.convert_to_tensor(buf,dtype=tf.float32))
-cycle_buf = G_ba(tf.convert_to_tensor(fake_buf,dtype=tf.float32))
-
-D_a = Discriminator('D_a', is_train=True,    #input 1, output 3 channel
-                    norm='instance', activation='leaky')
-D_b = Discriminator('D_b', is_train=True, #input 3, output 1 channel
-                    norm='instance', activation='leaky')
-
-D_real_a = D_a(tf.convert_to_tensor(fake_buf,dtype=tf.float32))
-D_real_b = D_b(tf.convert_to_tensor(cycle_buf,dtype=tf.float32))
-'''
-
 
 ################################
 #           TRAINING           #
@@ -107,3 +87,4 @@ with tf.compat.v1.Session() as sess:
 
     print("Starting training session.")
     model.train(sess, saver, data_a, data_b)
+    #model.test(sess,bnw)
