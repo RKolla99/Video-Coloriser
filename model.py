@@ -157,7 +157,7 @@ class CycleGAN(object):
                 'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
                     fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
 
-           if (step%60 == 0):
+            if (step%300 == 0):
                 saver.save(sess, '/content/gdrive/My Drive/ckpt/3dcyclegan')
 
     def test(self, sess, vid):
