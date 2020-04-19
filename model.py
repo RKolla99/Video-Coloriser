@@ -16,7 +16,6 @@ class CycleGAN(object):
         self._image_size = 256
         self._cycle_loss_coeff = 10
 
-        self._augment_size = self._image_size + (30 if self._image_size == 256 else 15)
         self._color_shape = [self._video_depth, self._image_size, self._image_size, 3]
         self._black_shape = [self._video_depth, self._image_size, self._image_size, 1]
 
@@ -24,10 +23,10 @@ class CycleGAN(object):
         self.lr = tf.compat.v1.placeholder(tf.float32, name='lr')
         self.global_step = tf.compat.v1.train.get_or_create_global_step(graph=None)
 
-        image_a = self.image_a = \
-            tf.compat.v1.placeholder(tf.float32, [self._batch_size] + self._color_shape, name='image_a')
-        image_b = self.image_b = \
-            tf.compat.v1.placeholder(tf.float32, [self._batch_size] + self._black_shape, name='image_b')
+        video_a = self.video_a = \
+            tf.compat.v1.placeholder(tf.float32, [self._batch_size] + self._color_shape, name='video_a')
+        video_b = self.video_b = \
+            tf.compat.v1.placeholder(tf.float32, [self._batch_size] + self._black_shape, name='video_b')
         fake_a = self.fake_a = \
             tf.compat.v1.placeholder(tf.float32, [None] + self._color_shape, name='fake_a')
         fake_b = self.fake_b = \
@@ -46,20 +45,20 @@ class CycleGAN(object):
         D_b = Discriminator('D_b', is_train=self.is_train,
                             norm='instance', activation='leaky')
 
-        # Generate images (a->b->a and b->a->b)
-        image_ab = self.image_ab = G_ab(image_a)
+        # Generate videos (a->b->a and b->a->b)
+        video_ab = self.video_ab = G_ab(video_a)
 
-        image_aba = self.image_aba = G_ba(image_ab)
+        video_aba = self.video_aba = G_ba(video_ab)
 
-        image_ba = self.image_ba = G_ba(image_b)
+        video_ba = self.video_ba = G_ba(video_b)
 
-        image_bab = self.image_bab = G_ab(image_ba)
+        video_bab = self.video_bab = G_ab(video_ba)
 
-        # Discriminate real/fake images
-        D_real_a = D_a(image_a)
-        D_fake_a = D_a(image_ba)
-        D_real_b = D_b(image_b)
-        D_fake_b = D_b(image_ab)
+        # Discriminate real/fake videos
+        D_real_a = D_a(video_a)
+        D_fake_a = D_a(video_ba)
+        D_real_b = D_b(video_b)
+        D_fake_b = D_b(video_ab)
         D_fake_a = D_a(fake_a)
         D_fake_b = D_b(fake_b)
 
@@ -74,8 +73,8 @@ class CycleGAN(object):
         loss_G_ba = tf.reduce_mean(tf.math.squared_difference(D_fake_a, 0.9))
 
         # L1 norm for reconstruction error
-        loss_rec_aba = tf.reduce_mean(tf.abs(image_a - image_aba))
-        loss_rec_bab = tf.reduce_mean(tf.abs(image_b - image_bab))
+        loss_rec_aba = tf.reduce_mean(tf.abs(video_a - video_aba))
+        loss_rec_bab = tf.reduce_mean(tf.abs(video_b - video_bab))
         loss_cycle = self._cycle_loss_coeff * (loss_rec_aba + loss_rec_bab)
 
         loss_G_ab_final = loss_G_ab + loss_cycle
@@ -131,13 +130,13 @@ class CycleGAN(object):
                 random.shuffle(data_A)
                 random.shuffle(data_B)
 
-            image_a = np.expand_dims(data_A[iter],axis=0)
-            image_b = np.expand_dims(data_B[iter],axis=0)
-            image_b = np.expand_dims(image_b,axis=4)
+            video_a = np.expand_dims(data_A[iter],axis=0)
+            video_b = np.expand_dims(data_B[iter],axis=0)
+            video_b = np.expand_dims(video_b,axis=4)
             
-            fake_a, fake_b = sess.run([self.image_ba, self.image_ab],
-                                      feed_dict={self.image_a: image_a,
-                                                 self.image_b: image_b,
+            fake_a, fake_b = sess.run([self.video_ba, self.video_ab],
+                                      feed_dict={self.video_a: video_a,
+                                                 self.video_b: video_b,
                                                  self.is_train: True})
 
             fetches = [self.loss_D_a, self.loss_D_b, self.loss_G_ab,
@@ -145,8 +144,8 @@ class CycleGAN(object):
                        self.optimizer_D_a, self.optimizer_D_b,
                        self.optimizer_G_ab, self.optimizer_G_ba]
 
-            fetched = sess.run(fetches, feed_dict={self.image_a: image_a,
-                                                   self.image_b: image_b,
+            fetched = sess.run(fetches, feed_dict={self.video_a: video_a,
+                                                   self.video_b: video_b,
                                                    self.is_train: True,
                                                    self.lr: lr,
                                                    self.fake_a: fake_a,
@@ -157,7 +156,7 @@ class CycleGAN(object):
                     'Loss: D_a({:.3f}) D_b({:.3f}) G_ab({:.3f}) G_ba({:.3f}) cycle({:.3f})'.format(
                         fetched[0], fetched[1], fetched[2], fetched[3], fetched[4]))
 
-
+'''
     def test(self, sess, data_A, data_B, base_dir):
         step = 0
         for data in data_A:
@@ -180,3 +179,4 @@ class CycleGAN(object):
             images = np.concatenate((image_b, image_ba, image_bab), axis=2)
             images = np.squeeze(images, axis=0)
             imsave(os.path.join(base_dir, 'b_to_a_{}.jpg'.format(step)), images)
+'''
