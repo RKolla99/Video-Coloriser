@@ -1,8 +1,6 @@
-import os
 import random
 
 from tqdm import trange
-from imageio import imsave
 import tensorflow as tf
 import numpy as np
 

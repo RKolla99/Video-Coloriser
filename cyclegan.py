@@ -5,69 +5,19 @@ with warnings.catch_warnings():
 from model import CycleGAN
 import numpy as np
 import cv2
-import ops
-
 
 ################################
-#       INPUT PIPELINE         #
+#          LOAD DATA           #
 ################################
 
 
-data_a = []
-data_b = []
-for i in range(3):
-	cap = cv2.VideoCapture('movie.mp4')
-	frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-	fc=0
-	ret=True
-	buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
-	bnw = np.empty((12, 256, 256), np.dtype('uint8'))
-	while (fc < frameCount  and ret):
-	    ret, frame = cap.read()
-	    buf[fc%12] = cv2.resize(frame,(256,256))
-	    bnw[fc%12] = cv2.cvtColor(buf[fc%12], cv2.COLOR_BGR2GRAY)
-	    if (fc%12==0):
-	    	data_a.append(buf)
-	    	data_b.append(bnw)
-	    	buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
-	    	bnw = np.empty((12, 256, 256), np.dtype('uint8'))
-	    fc += 1
-	cap.release()
+# Load H5 files
+rgb = h5py.File('/content/gdrive/My Drive/rgbVideos.h5','r')
+gray = h5py.File('/content/gdrive/My Drive/grayVideos.h5','r')
 
-print(np.shape(data_a),np.shape(data_b))
-
-
-'''
-# Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
-# Define the fps to be equal to 10. Also frame size is passed.
-out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc(*'MJPG'), 30, (256,256))
-for i in range(len(buf)):
-	out.write(buf[i])
-out.release()
-'''
-
-'''
-cap = cv2.VideoCapture('movie.mp4')
-frameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-fc=0
-ret=True
-buf = np.empty((12, 256, 256, 3), np.dtype('uint8'))
-bnw = np.empty((12, 256, 256), np.dtype('uint8'))
-while (fc < frameCount  and ret):
-    ret, frame = cap.read()
-    buf[fc%12] = cv2.resize(frame,(256,256))
-    bnw[fc%12] = cv2.cvtColor(buf[fc%12], cv2.COLOR_BGR2GRAY)
-    if (fc%12==0):
-    	break
-    fc += 1
-cap.release()
-
-bnw = np.expand_dims(bnw,axis=3)
-bnw = np.expand_dims(bnw,axis=0)
-buf = np.expand_dims(buf,axis=0)
-
-print(np.shape(buf),np.shape(bnw))
-'''
+# Convert to numpy arrays
+rgb = rgb['videos'][()]
+gray = gray['videos'][()]
 
 ################################
 #           TRAINING           #
@@ -85,6 +35,9 @@ with tf.compat.v1.Session() as sess:
     print("Initializing all parameters.")
     sess.run(init_all_op)
 
+    #saver.restore(sess, tf.train.latest_checkpoint('/content/gdrive/My Drive/ckpt'))
+
     print("Starting training session.")
     model.train(sess, saver, data_a, data_b)
-    #model.test(sess,bnw)
+
+    #model.test(sess,video)
